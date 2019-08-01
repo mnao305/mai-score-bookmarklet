@@ -5,9 +5,9 @@
 javascript:
 (function(d,s){
   g=d.createElement('div');g.id='mai-score-bookmarklet';d.body.appendChild(g);
-  s=d.createElement('script');s.src='//mai-score-bookmarklet.web.app/js/app.js';d.body.appendChild(s);
-  c=d.createElement('script');c.src='//mai-score-bookmarklet.web.app/js/chunk.js';d.body.appendChild(c);
-  s=d.createElement('link');s.href='//mai-score-bookmarklet.web.app/css/app.css';s.rel="stylesheet";s.type="text/css";d.body.appendChild(s);
+  s=d.createElement('script');s.src='//mai-score-bookmarklet.web.app/js/app.js'+'?'+Date.now();d.body.appendChild(s);
+  c=d.createElement('script');c.src='//mai-score-bookmarklet.web.app/js/chunk.js'+'?'+Date.now();d.body.appendChild(c);
+  s=d.createElement('link');s.href='//mai-score-bookmarklet.web.app/css/app.css'+'?'+Date.now();s.rel="stylesheet";s.type="text/css";d.body.appendChild(s);
 })(document)
 ```
 
