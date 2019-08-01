@@ -8,7 +8,7 @@ const auth = {
     return new Promise<firebase.auth.UserCredential>((resolve, reject) => {
       firebase
         .auth()
-        .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .setPersistence(firebase.auth.Auth.Persistence.SESSION)
         .then(() => {
           firebase
             .auth()
