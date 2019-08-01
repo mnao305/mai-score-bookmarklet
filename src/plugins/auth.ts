@@ -5,7 +5,7 @@ const twitter = new firebase.auth.TwitterAuthProvider()
 const auth = {
   // Twitterサインイン
   twitterLogin () {
-    return new Promise((resolve, reject) => {
+    return new Promise<firebase.auth.UserCredential>((resolve, reject) => {
       firebase
         .auth()
         .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
@@ -13,7 +13,7 @@ const auth = {
           firebase
             .auth()
             .signInWithPopup(twitter)
-            .then(() => resolve())
+            .then((result) => resolve(result))
             .catch((error) => reject(error))
         })
     })
