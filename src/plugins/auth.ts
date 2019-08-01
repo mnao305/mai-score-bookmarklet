@@ -13,19 +13,19 @@ const auth = {
           firebase
             .auth()
             .signInWithPopup(twitter)
-            .then(result => resolve(result))
-            .catch(error => reject(error))
+            .then(() => resolve())
+            .catch((error) => reject(error))
         })
     })
   },
   // メールログイン
-  mailLogin (email, passwd) {
-    return new Promise((resolve, reject) => {
+  mailLogin (email: string, passwd: string) {
+    return new Promise<firebase.auth.UserCredential>((resolve, reject) => {
       firebase
         .auth()
         .signInWithEmailAndPassword(email, passwd)
-        .then(result => resolve(result))
-        .catch(error => reject(error))
+        .then((result) => resolve(result))
+        .catch((error) => reject(error))
     })
   },
   // サインアウト
@@ -35,13 +35,13 @@ const auth = {
         .auth()
         .signOut()
         .then(() => resolve())
-        .catch(error => reject(error))
+        .catch((error) => reject(error))
     })
   },
   // 認証状態の変更検知
   auth () {
-    return new Promise(resolve => {
-      firebase.auth().onAuthStateChanged(user => resolve(user))
+    return new Promise<firebase.User | null>((resolve) => {
+      firebase.auth().onAuthStateChanged((user) => resolve(user))
     })
   }
 }
