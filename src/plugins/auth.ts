@@ -23,9 +23,14 @@ const auth = {
     return new Promise<firebase.auth.UserCredential>((resolve, reject) => {
       firebase
         .auth()
-        .signInWithEmailAndPassword(email, passwd)
-        .then((result) => resolve(result))
-        .catch((error) => reject(error))
+        .setPersistence(firebase.auth.Auth.Persistence.SESSION)
+        .then(() => {
+          firebase
+            .auth()
+            .signInWithEmailAndPassword(email, passwd)
+            .then((result) => resolve(result))
+            .catch((error) => reject(error))
+        })
     })
   },
   // サインアウト
