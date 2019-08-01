@@ -53,7 +53,7 @@ export default class App extends Vue {
   height: 100%;
   #closeBtn {
     display: block;
-    margin: 0 0 0 auto;
+    margin: 0 0 20px auto;
   }
 }
 .mai-score-bookmarklet-window {
