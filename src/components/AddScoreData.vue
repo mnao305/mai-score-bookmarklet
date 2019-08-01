@@ -3,7 +3,7 @@
     <button id="logout" @click="logout">ログアウト</button>
     <div class="addScoreDataMain">
       <p>舞スコア データ取得ツール</p>
-      <button @click="getData">データ取得</button>
+      <button class="addDataBtn" @click="getData">舞スコアへデータ登録</button>
       <p v-if="message" :class="{ error: error }">{{ message }}</p>
     </div>
   </div>
@@ -190,19 +190,7 @@ export default class addScoreData extends Vue {
 
 <style lang="scss" scoped>
 #addScoreData {
-  margin: 10px;
-  .addScoreDataMain {
-    text-align: center;
-    .error {
-      color: red;
-    }
-  }
-  #logout {
-    display: block;
-    margin: 0 0 0 auto;
-  }
-
-  button {
+    button {
     -webkit-appearance: button;
     -webkit-writing-mode: horizontal-tb !important;
     text-rendering: auto;
@@ -233,5 +221,32 @@ export default class addScoreData extends Vue {
     margin-inline-start: 0px;
     margin-inline-end: 0px;
   }
+  margin: 10px;
+  .addScoreDataMain {
+    text-align: center;
+    .error {
+      color: red;
+    }
+    .addDataBtn {
+      padding: 0.3em 1em;
+      text-decoration: none;
+      color: #0097A7;
+      border: solid 2px #0097A7;
+      border-radius: 3px;
+      transition: .4s;
+      background: white;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .addDataBtn:hover {
+      background: #00ACC1;
+      color: white;
+    }
+  }
+  #logout {
+    display: block;
+    margin: 0 0 0 auto;
+  }
+
 }
 </style>
