@@ -1,7 +1,7 @@
 <template>
   <div id="mai-score-bookmarklet">
     <div class="mai-score-bookmarklet-window">
-      <button id="closeBtn" @click="closeBookmarkletWindow">[×]閉じる</button>
+      <button id="closeBtn" @click="closeBookmarkletWindow">[×]閉㝘る</button>
       <AddScoreData :uid="uid" @loginCheck="loginCheck" v-if="uid" />
       <LoginForm @loginCheck="loginCheck" v-else />
     </div>
@@ -55,6 +55,7 @@ export default class App extends Vue {
     display: block;
     margin: 0 0 20px auto;
   }
+  z-index: 9999999;
 }
 .mai-score-bookmarklet-window {
   background-color: white;
