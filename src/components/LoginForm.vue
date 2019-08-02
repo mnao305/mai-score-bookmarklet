@@ -2,6 +2,7 @@
   <div id="loginForm">
     <button @click="twitterLogin">Twitterログイン</button><br />
     <label>メールアドレス<br /><input type="text" name="mail" id="mail" v-model="mail"/></label><br />
+    <p>※ポップアップがブロックされることがありますが、それを許可してください。</p>
     <label>パスワード<br /><input type="password" name="passwd" id="passwd" v-model="passwd"/></label><br />
     <button @click="mailLogin">メールログイン</button>
     <p>※舞スコアに登録したメールアドレス・パスワードでログインしてください。</p>
