@@ -161,6 +161,7 @@ export default class addScoreData extends Vue {
       }
     }
     console.log(scoreData)
+    await this.getFetchUserData(date)
     this.message = 'データ保存中...'
     for (let i = 0; i < difficultyLevel.length; i++) {
       db.collection('users')
@@ -172,7 +173,7 @@ export default class addScoreData extends Vue {
           console.error(e)
         })
     }
-    db.collection('users')
+    await db.collection('users')
       .doc(this.uid)
       .collection('secure')
       .doc(this.uid)
@@ -181,6 +182,53 @@ export default class addScoreData extends Vue {
       })
     this.message = 'データ保存完了！'
   }
+
+  async getFetchUserData (date: number) {
+    this.message = 'ユーザデータを読み込み中...'
+    try {
+      const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/home/')
+      const element = document.createElement('div') as any
+      element.innerHTML = data
+      if (data.match(/ログインしてください/)) {
+        this.message = 'maimaiでらっくすNETにログインしていません。ログインしてから再度お試しください。'
+        this.error = true
+      }
+      const gotRating = element.getElementsByClassName('rating_block f_11')[0].innerText
+      const docs = await db
+        .collection('users')
+        .doc(this.uid)
+        .collection('userData')
+        .doc(this.uid)
+        .get()
+      let gotOldUserData
+      if (docs && docs.exists) {
+        gotOldUserData = docs.data()
+      }
+      let ratings = []
+      if (gotOldUserData) {
+        ratings = gotOldUserData.rating || []
+      }
+      if ((ratings.length >= 1 && ratings[ratings.length - 1].rating !== Number(gotRating)) || ratings.length === 0) {
+        ratings.push({ rating: Number(gotRating), date: date })
+      }
+      await db
+        .collection('users')
+        .doc(this.uid)
+        .collection('userData')
+        .doc(this.uid)
+        .set({
+          ratings: ratings
+        })
+    } catch (error) {
+      console.error(error)
+
+      if (error.response && error.response.data && error.response.data.match(/メンテナンス中/)) {
+        this.message = 'maimaiでらっくすNETはメンテナンス中です。メンテナンス終了後に再度お試しください。'
+        this.error = true
+      }
+    }
+  }
+
   async logout () {
     await auth.logout()
     this.$emit('loginCheck')
