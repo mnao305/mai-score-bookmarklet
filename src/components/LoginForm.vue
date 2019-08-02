@@ -38,7 +38,7 @@ export default class LoginForm extends Vue {
       }
       this.$emit('loginCheck')
     } catch (error) {
-      this.errorMessage = 'ログインに失敗しました。'
+      this.errorMessage = 'ログインに失敗しました。再度お試しください'
     }
   }
   async mailLogin () {
@@ -46,7 +46,7 @@ export default class LoginForm extends Vue {
       await auth.mailLogin(this.mail, this.passwd)
       this.$emit('loginCheck')
     } catch (error) {
-      this.errorMessage = 'ログインに失敗しました。'
+      this.errorMessage = 'ログインに失敗しました。入力内容確認の上再度お試しください'
     }
   }
 }
