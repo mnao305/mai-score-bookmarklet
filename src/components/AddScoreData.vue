@@ -5,6 +5,7 @@
       <p>舞スコア データ取得ツール</p>
       <button class="addDataBtn" @click="getData">舞スコアへデータ登録</button>
       <p v-if="message" :class="{ error: error }">{{ message }}</p>
+      <p v-if="publicData"><a :href="tweetURL" target="_blank">スコア更新ツイートする</a></p>
     </div>
   </div>
 </template>
@@ -21,6 +22,9 @@ export default class addScoreData extends Vue {
   error = false
   @Prop({ default: '' })
   uid?: string;
+
+  publicData = false
+  tweetURL = ''
 
   async getData () {
     this.error = false
@@ -180,6 +184,7 @@ export default class addScoreData extends Vue {
       .update({
         _updateAt: date
       })
+    this.getTweetURL()
     this.message = 'データ保存完了！'
   }
 
@@ -244,6 +249,16 @@ export default class addScoreData extends Vue {
   async logout () {
     await auth.logout()
     this.$emit('loginCheck')
+  }
+
+  async getTweetURL () {
+    const doc = await db
+      .collection('users')
+      .doc(this.uid)
+      .get()
+    const userData = doc.data() as {public:boolean, displayName:string}
+    this.publicData = userData.public
+    this.tweetURL = `https://twitter.com/intent/tweet?text=スコア更新しました！&hashtags=舞スコア&url=https://mai-score.com/user/${userData.displayName}`
   }
 }
 </script>
