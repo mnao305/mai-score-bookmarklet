@@ -1,7 +1,7 @@
 <template>
   <div id="mai-score-bookmarklet">
     <div class="mai-score-bookmarklet-window">
-      <button id="closeBtn" @click="closeBookmarkletWindow">[×]閉㝘る</button>
+      <button id="closeBtn" @click="closeBookmarkletWindow">[×]閉じる</button>
       <AddScoreData :uid="uid" @loginCheck="loginCheck" v-if="uid" />
       <LoginForm @loginCheck="loginCheck" v-else />
     </div>
