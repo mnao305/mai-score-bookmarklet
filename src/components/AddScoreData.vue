@@ -3,7 +3,7 @@
     <button id="logout" @click="logout">ログアウト</button>
     <div class="addScoreDataMain">
       <p>舞スコア データ取得ツール</p>
-      <button class="addDataBtn" @click="getData">舞スコアへデータ登録</button>
+      <button :disabled="isDisable" :class="{ disableBtn: isDisable }" class="addDataBtn" @click="getData">舞スコアへデータ登録</button>
       <p v-if="message" :class="{ error: error }">{{ message }}</p>
       <p v-if="publicData"><a :href="tweetURL" target="_blank">スコア更新ツイートする</a></p>
     </div>
@@ -25,9 +25,11 @@ export default class addScoreData extends Vue {
 
   publicData = false
   tweetURL = ''
+  isDisable = false
 
   async getData () {
     this.error = false
+    this.isDisable = true
     this.message = 'データ取得準備中...'
     const date = Date.now()
     const difficultyLevel = ['Basic', 'Advanced', 'Expert', 'Master', 'ReMaster']
@@ -50,6 +52,7 @@ export default class addScoreData extends Vue {
         if (data.match(/ログインしてください/)) {
           this.message = 'maimaiでらっくすNETにログインしていません。ログインしてから再度お試しください。'
           this.error = true
+          this.isDisable = false
           return
         }
         const tmpEl = document.createElement('div')
@@ -159,6 +162,7 @@ export default class addScoreData extends Vue {
         if (error.response && error.response.data && error.response.data.match(/メンテナンス中/)) {
           this.message = 'maimaiでらっくすNETはメンテナンス中です。メンテナンス終了後に再度お試しください。'
           this.error = true
+          this.isDisable = false
           return
         }
         continue
@@ -197,6 +201,7 @@ export default class addScoreData extends Vue {
       if (data.match(/ログインしてください/)) {
         this.message = 'maimaiでらっくすNETにログインしていません。ログインしてから再度お試しください。'
         this.error = true
+        this.isDisable = false
       }
       const gotRating = element.getElementsByClassName('rating_block f_11')[0].innerText
       const gotMaxRating = Number(element.getElementsByClassName('p_r_5 f_11')[0].innerText.split('：')[1])
@@ -242,6 +247,7 @@ export default class addScoreData extends Vue {
       if (error.response && error.response.data && error.response.data.match(/メンテナンス中/)) {
         this.message = 'maimaiでらっくすNETはメンテナンス中です。メンテナンス終了後に再度お試しください。'
         this.error = true
+        this.isDisable = false
       }
     }
   }
@@ -314,6 +320,11 @@ export default class addScoreData extends Vue {
       font-size: 18px;
     }
     .addDataBtn:hover {
+      background: #00ACC1;
+      color: white;
+    }
+    .disableBtn {
+      cursor: not-allowed;
       background: #00ACC1;
       color: white;
     }
