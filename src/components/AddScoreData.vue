@@ -126,17 +126,17 @@ export default class addScoreData extends Vue {
           let oldAchievement = []
           let oldDxScore = []
           if (gotOldScore && gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`]) {
-            oldAchievement = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].achievement || []
-            oldDxScore = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].dxScore || []
+            oldAchievement = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].achievements || []
+            oldDxScore = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].dxScores || []
             musicUpdateDate = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].date || date
           } else {
             musicUpdateDate = date
           }
-          if ((oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].score !== Number(tmp[2].replace('%', ''))) || (oldAchievement.length === 0 && tmp[2])) {
+          if ((oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].achievement !== Number(tmp[2].replace('%', ''))) || (oldAchievement.length === 0 && tmp[2])) {
             oldAchievement.push({ achievement: Number(tmp[2].replace('%', '')), date: date })
             musicUpdateDate = date
           }
-          if ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].score !== Number(tmp[3].replace(',', ''))) || (oldDxScore.length === 0 && tmp[3])) {
+          if ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].dxScore !== Number(tmp[3].replace(',', ''))) || (oldDxScore.length === 0 && tmp[3])) {
             oldDxScore.push({ dxScore: Number(tmp[3].replace(',', '')), date: date })
             musicUpdateDate = date
           }
