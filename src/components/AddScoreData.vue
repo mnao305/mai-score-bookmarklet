@@ -226,7 +226,7 @@ export default class addScoreData extends Vue {
       }
       let ratings = []
       if (gotOldUserData) {
-        ratings = gotOldUserData.rating || []
+        ratings = gotOldUserData.ratings || []
       }
       if ((ratings.length >= 1 && ratings[ratings.length - 1].rating !== Number(gotRating)) || ratings.length === 0) {
         ratings.push({ rating: Number(gotRating), date: date })
