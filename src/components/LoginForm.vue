@@ -36,6 +36,23 @@ export default class LoginForm extends Vue {
         await auth.logout()
         return
       }
+
+      if (!data.credential) {
+        throw new Error()
+      }
+      const credential = data.credential as firebase.auth.OAuthCredential
+      await db
+        .collection('users')
+        .doc(dbData.id)
+        .collection('secure')
+        .doc(dbData.id)
+        .set(
+          {
+            accessToken: credential.accessToken,
+            secret: credential.secret
+          },
+          { merge: true }
+        )
       this.$emit('loginCheck')
     } catch (error) {
       this.errorMessage = 'ログインに失敗しました。再度お試しください'
