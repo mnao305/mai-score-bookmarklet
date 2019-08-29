@@ -5,7 +5,11 @@
       <p>舞スコア データ取得ツール</p>
       <button :disabled="isDisable" :class="{ disableBtn: isDisable }" class="addDataBtn" @click="getData">舞スコアへデータ登録</button>
       <p v-if="message" :class="{ error: error }">{{ message }}</p>
-      <p v-if="publicData"><a :href="tweetURL" target="_blank">スコア更新ツイートする</a></p>
+      <div v-if="message === 'データ保存完了！'" class="tweetLink">
+        <p v-if="publicData"><a :href="tweetURL" target="_blank">スコア更新ツイート</a></p>
+        <p v-if="publicData && twitterLogin"><TweetsWithImages @tweetStatusUpdate="tweetStatusUpdate" /></p>
+      </div>
+      <p v-if="tweetStatus">{{ tweetStatus }}</p>
     </div>
   </div>
 </template>
@@ -15,8 +19,14 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
 import auth from '@/plugins/auth'
 import { db } from '@/plugins/firestore'
 import Axios from 'axios'
+import firebase from '@/plugins/firebase'
+import TweetsWithImages from './TweetsWithImages.vue'
 
-@Component
+@Component({
+  components: {
+    TweetsWithImages
+  }
+})
 export default class addScoreData extends Vue {
   message = ''
   error = false
@@ -27,6 +37,29 @@ export default class addScoreData extends Vue {
   tweetURL = ''
   isDisable = false
 
+  twitterLogin = false
+  tweetStatus = ''
+
+  async created () {
+    const docs = await db
+      .collection('users')
+      .doc(this.uid)
+      .collection('secure')
+      .doc(this.uid)
+      .get()
+    let data
+    if (docs && docs.exists) {
+      data = docs.data()
+    }
+    if (!data) {
+      this.twitterLogin = false
+      return
+    }
+    this.twitterLogin = data.providerData.some((v:any) => {
+      return v.providerId === 'twitter.com'
+    })
+  }
+
   async getData () {
     this.error = false
     this.isDisable = true
@@ -34,6 +67,7 @@ export default class addScoreData extends Vue {
     const date = Date.now()
     const difficultyLevel = ['Basic', 'Advanced', 'Expert', 'Master', 'ReMaster']
     let scoreData: any = []
+    let updateScoreData = []
     for (let i = 0; i < difficultyLevel.length; i++) {
       const docs = await db
         .collection('users')
@@ -132,13 +166,16 @@ export default class addScoreData extends Vue {
           } else {
             musicUpdateDate = date
           }
+          let updateFlg = false
           if ((oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].achievement !== Number(tmp[2].replace('%', ''))) || (oldAchievement.length === 0 && tmp[2])) {
             oldAchievement.push({ achievement: Number(tmp[2].replace('%', '')), date: date })
             musicUpdateDate = date
+            updateFlg = true
           }
           if ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].dxScore !== Number(tmp[3].replace(',', ''))) || (oldDxScore.length === 0 && tmp[3])) {
             oldDxScore.push({ dxScore: Number(tmp[3].replace(',', '')), date: date })
             musicUpdateDate = date
+            updateFlg = true
           }
           const achievements = tmp[2] ? oldAchievement : null
           const dxScores = tmp[3] ? oldDxScore : null
@@ -156,6 +193,9 @@ export default class addScoreData extends Vue {
             date: musicUpdateDate,
             musicID: classList[j].getElementsByTagName('input')[0].value
           }
+          if (updateFlg) {
+            updateScoreData.push(scoreData[difficultyLevel[i]][`${tmp[1]}_${difficultyLevel[i]}_${type}`])
+          }
         }
       } catch (error) {
         console.error(error.data)
@@ -170,6 +210,10 @@ export default class addScoreData extends Vue {
     }
     console.log(scoreData)
     await this.getFetchUserData(date)
+    if (updateScoreData.length <= 0) {
+      this.message = '更新データはありませんでした'
+      return
+    }
     this.message = 'データ保存中...'
     for (let i = 0; i < difficultyLevel.length; i++) {
       db.collection('users')
@@ -188,7 +232,8 @@ export default class addScoreData extends Vue {
       .update({
         _updateAt: date
       })
-    this.getTweetURL()
+    await this.getTweetURL()
+    await this.createScoreImg(updateScoreData)
     this.message = 'データ保存完了！'
   }
 
@@ -270,6 +315,111 @@ export default class addScoreData extends Vue {
     this.publicData = userData.public
     this.tweetURL = `https://twitter.com/intent/tweet?text=スコア更新しました！&hashtags=舞スコア&url=https://mai-score.com/user/${userData.displayName}`
   }
+
+  async createScoreImg (updateScoreData: any[]) {
+    console.log(updateScoreData)
+    updateScoreData.reverse()
+    if (updateScoreData.length >= 20) {
+      updateScoreData = updateScoreData.slice(0, 20)
+    }
+    let canvas = document.createElement('canvas')
+    const height = 75 * updateScoreData.length
+    canvas.width = 700
+    canvas.height = height
+    canvas.style.width = '700'
+    canvas.style.height = `${height}`
+    let ctx = canvas.getContext('2d')!
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, 700, height)
+    ctx.fillStyle = 'black'
+    let i = 0
+    for (const v of updateScoreData) {
+      console.log(v)
+      try {
+        const musicIconUrl = await firebase
+          .storage()
+          .ref()
+          .child(`musicIcon/${v.title}.png`)
+          .getDownloadURL()
+        await loadImage(musicIconUrl)
+      } catch (error) {
+        if (error.code === 'storage/object-not-found') {
+          const musicIconUrl = await this.saveMusicIcon(v.musicID)
+          await loadImage(musicIconUrl)
+        } else {
+          console.error(error)
+        }
+      }
+      ctx.font = `24px 'Meiryo'`
+      const type = v.type === 'deluxe' ? 'DX' : 'Std'
+      ctx.fillText(`[${v.difficultyLevel.slice(0, 3)}|${type}] ${v.title}`, 80, 30 * (i * 2 + 1) + 15 * i)
+      let text
+      let dxText
+      if (v.achievements.length >= 2) {
+        text = `${v.achievements.slice(-2)[0].achievement}%→${v.achievements.slice(-1)[0].achievement}%  +${(
+          v.achievements.slice(-1)[0].achievement - v.achievements.slice(-2)[0].achievement
+        ).toFixed(4)}%`
+        dxText = `${v.dxScores.slice(-2)[0].dxScore}→${v.dxScores.slice(-1)[0].dxScore}  +${v.dxScores.slice(-1)[0].dxScore - v.dxScores.slice(-2)[0].dxScore}`
+      } else {
+        text = `0.0000%→${v.achievements.slice(-1)[0].achievement}%  +${v.achievements[0].achievement.toFixed(4)}%`
+        dxText = `0→${v.dxScores.slice(-1)[0].dxScore}  +${v.dxScores[0].dxScore}`
+      }
+      ctx.font = `16px 'Meiryo'`
+      ctx.fillText(text, 80, 30 * (i * 2 + 1) + 20 + 15 * i)
+      ctx.fillText(dxText, 80, 30 * (i * 2 + 1) + 40 + 15 * i)
+      ctx.fillText(`${v.rank}  ${v.comboRank || ''}  ${v.sync || ''}`, 270, 30 * (i * 2 + 1) + 40 + 15 * i)
+      i++
+    }
+    const imgUrl = canvas.toDataURL('image/jpeg')
+    // Firebase Storageに画像をアップロード
+    try {
+      const storageRef = firebase
+        .storage()
+        .ref(`userData/${this.uid}/`)
+        .child('updateScore.jpg')
+      const data = await storageRef.putString(imgUrl, 'data_url')
+      console.log(data)
+    } catch (error) {
+      console.error(error)
+    }
+    function loadImage (src: string) {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          ctx.drawImage(img, 10, 10 + 75 * i, 60, 60)
+          resolve()
+        }
+        img.onerror = e => reject(e)
+        img.crossOrigin = 'anonymous'
+        img.src = src
+      })
+    }
+  }
+  async saveMusicIcon (musicID: string) {
+    const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicDetail/?idx=${encodeURIComponent(musicID)}`)
+    const tmpEl = document.createElement('div')
+    tmpEl.innerHTML = data
+    const title = (tmpEl.getElementsByClassName('m_5 f_15 break')[0] as HTMLElement).innerText
+    const musicImgUrl = (tmpEl.getElementsByClassName('w_180 m_5 f_l')[0] as HTMLImageElement).src
+    const musicIcon = await Axios.get(musicImgUrl, { responseType: 'arraybuffer' })
+    try {
+      const storageRef = firebase
+        .storage()
+        .ref('musicIcon/')
+        .child(`${title}.png`)
+      const data = await storageRef.put(musicIcon.data, {
+        contentType: 'image/png'
+      })
+      console.log(data)
+    } catch (error) {
+      console.error(error)
+    }
+    return musicImgUrl
+  }
+  tweetStatusUpdate (str: string) {
+    console.log(str)
+    this.tweetStatus = str
+  }
 }
 </script>
 
@@ -337,6 +487,9 @@ export default class addScoreData extends Vue {
     display: block;
     margin: 0 0 0 auto;
   }
-
+  .tweetLink {
+    display: flex;
+    justify-content: space-around;
+  }
 }
 </style>
