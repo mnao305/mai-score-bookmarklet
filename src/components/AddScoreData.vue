@@ -350,7 +350,7 @@ export default class addScoreData extends Vue {
           console.error(error)
         }
       }
-      ctx.font = `24px 'Meiryo'`
+      ctx.font = `24px 'sans-serif'`
       const type = v.type === 'deluxe' ? 'DX' : 'Std'
       ctx.fillText(`[${v.difficultyLevel.slice(0, 3)}|${type}] ${v.title}`, 80, 30 * (i * 2 + 1) + 15 * i)
       let text
@@ -367,7 +367,7 @@ export default class addScoreData extends Vue {
       } else {
         dxText = `0→${v.dxScores.slice(-1)[0].dxScore}  +${v.dxScores[0].dxScore}`
       }
-      ctx.font = `16px 'Meiryo'`
+      ctx.font = `16px 'sans-serif'`
       ctx.fillText(text, 80, 30 * (i * 2 + 1) + 20 + 15 * i)
       ctx.fillText(dxText, 80, 30 * (i * 2 + 1) + 40 + 15 * i)
       ctx.fillText(`${v.rank}  ${v.comboRank || ''}  ${v.sync || ''}`, 270, 30 * (i * 2 + 1) + 40 + 15 * i)
