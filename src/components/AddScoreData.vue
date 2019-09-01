@@ -359,9 +359,12 @@ export default class addScoreData extends Vue {
         text = `${v.achievements.slice(-2)[0].achievement}%→${v.achievements.slice(-1)[0].achievement}%  +${(
           v.achievements.slice(-1)[0].achievement - v.achievements.slice(-2)[0].achievement
         ).toFixed(4)}%`
-        dxText = `${v.dxScores.slice(-2)[0].dxScore}→${v.dxScores.slice(-1)[0].dxScore}  +${v.dxScores.slice(-1)[0].dxScore - v.dxScores.slice(-2)[0].dxScore}`
       } else {
         text = `0.0000%→${v.achievements.slice(-1)[0].achievement}%  +${v.achievements[0].achievement.toFixed(4)}%`
+      }
+      if (v.dxScores.length >= 2) {
+        dxText = `${v.dxScores.slice(-2)[0].dxScore}→${v.dxScores.slice(-1)[0].dxScore}  +${v.dxScores.slice(-1)[0].dxScore - v.dxScores.slice(-2)[0].dxScore}`
+      } else {
         dxText = `0→${v.dxScores.slice(-1)[0].dxScore}  +${v.dxScores[0].dxScore}`
       }
       ctx.font = `16px 'Meiryo'`
