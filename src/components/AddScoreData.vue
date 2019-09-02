@@ -167,12 +167,12 @@ export default class addScoreData extends Vue {
             musicUpdateDate = date
           }
           let updateFlg = false
-          if ((oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].achievement !== Number(tmp[2].replace('%', ''))) || (oldAchievement.length === 0 && tmp[2])) {
+          if (
+            (oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].achievement !== Number(tmp[2].replace('%', ''))) ||
+              (oldAchievement.length === 0 && tmp[2]) ||
+              ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].dxScore !== Number(tmp[3].replace(',', ''))) || (oldDxScore.length === 0 && tmp[3]))
+          ) {
             oldAchievement.push({ achievement: Number(tmp[2].replace('%', '')), date: date })
-            musicUpdateDate = date
-            updateFlg = true
-          }
-          if ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].dxScore !== Number(tmp[3].replace(',', ''))) || (oldDxScore.length === 0 && tmp[3])) {
             oldDxScore.push({ dxScore: Number(tmp[3].replace(',', '')), date: date })
             musicUpdateDate = date
             updateFlg = true
