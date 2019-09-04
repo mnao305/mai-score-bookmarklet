@@ -21,6 +21,7 @@ import { db } from '@/plugins/firestore'
 import Axios from 'axios'
 import firebase from '@/plugins/firebase'
 import TweetsWithImages from './TweetsWithImages.vue'
+import JsSHA from 'jssha'
 
 @Component({
   components: {
@@ -104,6 +105,13 @@ export default class addScoreData extends Vue {
             .trim()
             .split('\n')
             .map((v:any) => v.trim())
+
+          // 曲IDからハッシュ値を取って、DBの保存時に使う。
+          const shaObj = new JsSHA('SHA-1', 'B64')
+          const musicID = classList[j].getElementsByTagName('input')[0].value
+          shaObj.update(musicID)
+          const musicIDHash = shaObj.getHash('HEX')
+
           const imgList = classList[j].getElementsByClassName('h_30 f_r') as HTMLCollectionOf<HTMLImageElement>
           let rank = null
           let comboRank = null
@@ -159,13 +167,20 @@ export default class addScoreData extends Vue {
           const type = classList[j].lastElementChild.src.indexOf('standard.png') >= 0 ? 'standard' : 'deluxe'
           let oldAchievement = []
           let oldDxScore = []
+          if (gotOldScore && gotOldScore[musicIDHash]) {
+            oldAchievement = gotOldScore[musicIDHash].achievements || []
+            oldDxScore = gotOldScore[musicIDHash].dxScores || []
+            musicUpdateDate = gotOldScore[musicIDHash].date || date
+          } else {
+            musicUpdateDate = date
+          }
+          // 互換性保持のためしばらくおいておく。しばらくしたら削除する↓
           if (gotOldScore && gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`]) {
             oldAchievement = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].achievements || []
             oldDxScore = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].dxScores || []
             musicUpdateDate = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].date || date
-          } else {
-            musicUpdateDate = date
           }
+
           let updateFlg = false
           if (
             (oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].achievement !== Number(tmp[2].replace('%', ''))) ||
@@ -179,7 +194,7 @@ export default class addScoreData extends Vue {
           }
           const achievements = tmp[2] ? oldAchievement : null
           const dxScores = tmp[3] ? oldDxScore : null
-          scoreData[difficultyLevel[i]][`${tmp[1]}_${difficultyLevel[i]}_${type}`] = {
+          scoreData[difficultyLevel[i]][musicIDHash] = {
             title: tmp[1],
             achievements: achievements,
             dxScores: dxScores,
@@ -191,10 +206,10 @@ export default class addScoreData extends Vue {
             comboRank: comboRank,
             sync: sync,
             date: musicUpdateDate,
-            musicID: classList[j].getElementsByTagName('input')[0].value
+            musicID: musicID
           }
           if (updateFlg) {
-            updateScoreData.push(scoreData[difficultyLevel[i]][`${tmp[1]}_${difficultyLevel[i]}_${type}`])
+            updateScoreData.push(scoreData[difficultyLevel[i]][musicIDHash])
           }
         }
       } catch (error) {
@@ -220,7 +235,7 @@ export default class addScoreData extends Vue {
         .doc(this.uid)
         .collection('scores')
         .doc(difficultyLevel[i])
-        .set(scoreData[difficultyLevel[i]], { merge: true })
+        .set(scoreData[difficultyLevel[i]])
         .catch(e => {
           console.error(e)
         })
