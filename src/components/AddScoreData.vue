@@ -106,11 +106,12 @@ export default class addScoreData extends Vue {
             .split('\n')
             .map((v:any) => v.trim())
 
-          // 曲IDからハッシュ値を取って、DBの保存時に使う。
-          const shaObj = new JsSHA('SHA-1', 'B64')
-          const musicID = classList[j].getElementsByTagName('input')[0].value
-          shaObj.update(musicID)
-          const musicIDHash = shaObj.getHash('HEX')
+          const type = classList[j].lastElementChild.src.indexOf('standard.png') >= 0 ? 'standard' : 'deluxe'
+
+          // 曲名などからハッシュ値を取って、DBの保存時に使う。
+          const shaObj = new JsSHA('SHA-1', 'TEXT')
+          shaObj.update(`${tmp[1]}_${difficultyLevel[i]}_${type}_${genre}`)
+          const musicHash = shaObj.getHash('HEX')
 
           const imgList = classList[j].getElementsByClassName('h_30 f_r') as HTMLCollectionOf<HTMLImageElement>
           let rank = null
@@ -164,13 +165,12 @@ export default class addScoreData extends Vue {
             }
           }
           let musicUpdateDate
-          const type = classList[j].lastElementChild.src.indexOf('standard.png') >= 0 ? 'standard' : 'deluxe'
           let oldAchievement = []
           let oldDxScore = []
-          if (gotOldScore && gotOldScore[musicIDHash]) {
-            oldAchievement = gotOldScore[musicIDHash].achievements || []
-            oldDxScore = gotOldScore[musicIDHash].dxScores || []
-            musicUpdateDate = gotOldScore[musicIDHash].date || date
+          if (gotOldScore && gotOldScore[musicHash]) {
+            oldAchievement = gotOldScore[musicHash].achievements || []
+            oldDxScore = gotOldScore[musicHash].dxScores || []
+            musicUpdateDate = gotOldScore[musicHash].date || date
           } else {
             musicUpdateDate = date
           }
@@ -194,7 +194,7 @@ export default class addScoreData extends Vue {
           }
           const achievements = tmp[2] ? oldAchievement : null
           const dxScores = tmp[3] ? oldDxScore : null
-          scoreData[difficultyLevel[i]][musicIDHash] = {
+          scoreData[difficultyLevel[i]][musicHash] = {
             title: tmp[1],
             achievements: achievements,
             dxScores: dxScores,
@@ -206,10 +206,10 @@ export default class addScoreData extends Vue {
             comboRank: comboRank,
             sync: sync,
             date: musicUpdateDate,
-            musicID: musicID
+            musicID: classList[j].getElementsByTagName('input')[0].value
           }
           if (updateFlg) {
-            updateScoreData.push(scoreData[difficultyLevel[i]][musicIDHash])
+            updateScoreData.push(scoreData[difficultyLevel[i]][musicHash])
           }
         }
       } catch (error) {
