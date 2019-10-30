@@ -14,7 +14,7 @@
   </div>
 </template>
 
-<script lang="js">
+<script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
 import auth from '@/plugins/auth'
 import { db } from '@/plugins/firestore'
@@ -41,7 +41,7 @@ export default class addScoreData extends Vue {
   twitterLogin = false
   tweetStatus = ''
 
-  versionMusicList = {}
+  versionMusicList: any = {}
 
   async created () {
     const docs = await db
@@ -93,8 +93,8 @@ export default class addScoreData extends Vue {
           this.isDisable = false
           return
         }
-        const tmpEl = document.createElement('div')
-        tmpEl.innerHTML = data
+        const domparser = new DOMParser()
+        const tmpEl = domparser.parseFromString(data, 'text/html')
         const classList = tmpEl.getElementsByClassName('main_wrapper')[0].children as any
         let genre = ''
         for (let j = 0; j < classList.length; j++) {
@@ -196,7 +196,7 @@ export default class addScoreData extends Vue {
             updateFlg = true
           }
 
-          const tmpList = this.versionMusicList.filter(v => v.title === tmp[1] && v.type === type && v.genre === genre)
+          const tmpList = this.versionMusicList.filter((v:any) => v.title === tmp[1] && v.type === type && v.genre === genre)
           const version = tmpList[0].version
 
           const achievements = tmp[2] ? oldAchievement : null
@@ -266,22 +266,22 @@ export default class addScoreData extends Vue {
     this.message = 'ユーザデータを読み込み中...'
     try {
       const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/playerData/')
-      const element = document.createElement('div') as any
-      element.innerHTML = data
+      const domparser = new DOMParser()
+      const element = domparser.parseFromString(data, 'text/html')
       if (data.match(/ログインしてください/)) {
         this.message = 'maimaiでらっくすNETにログインしていません。ログインしてから再度お試しください。'
         this.error = true
         this.isDisable = false
       }
-      const gotRating = element.getElementsByClassName('rating_block f_11')[0].innerText
-      const gotMaxRating = Number(element.getElementsByClassName('p_r_5 f_11')[0].innerText.split('：')[1])
+      const gotRating = (element.getElementsByClassName('rating_block f_11')[0] as HTMLElement).innerText
+      const gotMaxRating = Number((element.getElementsByClassName('p_r_5 f_11')[0] as HTMLElement).innerText.split('：')[1])
       const gotPlayCount = Number(
-        element
-          .getElementsByClassName('m_5 m_t_10 t_r f_12')[0]
+        (element
+          .getElementsByClassName('m_5 m_t_10 t_r f_12')[0] as HTMLElement)
           .innerText.split('：')[1]
           .split('回')[0]
       )
-      const gotUserName = element.getElementsByClassName('name_block f_l f_14')[0].innerText.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s: string) => {
+      const gotUserName = (element.getElementsByClassName('name_block f_l f_14')[0] as HTMLElement).innerText.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s: string) => {
         return String.fromCharCode(s.charCodeAt(0) - 65248)
       })
       const docs = await db
@@ -425,8 +425,8 @@ export default class addScoreData extends Vue {
   }
   async saveMusicIcon (musicID: string) {
     const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicDetail/?idx=${encodeURIComponent(musicID)}`)
-    const tmpEl = document.createElement('div')
-    tmpEl.innerHTML = data
+    const domparser = new DOMParser()
+    const tmpEl = domparser.parseFromString(data, 'text/html')
     const title = (tmpEl.getElementsByClassName('m_5 f_15 break')[0] as HTMLElement).innerText
     const musicImgUrl = (tmpEl.getElementsByClassName('w_180 m_5 f_l')[0] as HTMLImageElement).src
     const musicIcon = await Axios.get(musicImgUrl, { responseType: 'arraybuffer' })
@@ -460,13 +460,13 @@ export default class addScoreData extends Vue {
       }
     }
     const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/record/')
-    const tmpEl = document.createElement('div')
-    tmpEl.innerHTML = data
+    const domparser = new DOMParser()
+    const tmpEl = domparser.parseFromString(data, 'text/html')
     const classList:any = tmpEl.getElementsByClassName('p_10 t_l f_0 v_b')
     console.log(classList)
     console.log(classList[0])
     let recordList:{}[] = []
-    classList.forEach((el:any) => {
+    Array.prototype.forEach.call(classList, (el: any) => {
       const splitedMusicImgUrl = el.getElementsByClassName('music_img m_5 m_r_0 f_l')[0].src.split('/')
       const musicID = splitedMusicImgUrl[splitedMusicImgUrl.length - 1].split('.')[0]
       const title = el.getElementsByClassName('basic_block m_5 p_5 p_l_10 f_13 break')[0].innerText
@@ -491,7 +491,7 @@ export default class addScoreData extends Vue {
       }
     })
     console.log(deduplicationRecordList)
-    let chartDataList = { Basic: {}, Advanced: {}, Expert: {}, Master: {}, ReMaster: {} }
+    let chartDataList: any = { Basic: {}, Advanced: {}, Expert: {}, Master: {}, ReMaster: {} }
     try {
       const sleep = (msec:number) => new Promise(resolve => setTimeout(resolve, msec))
       const sum = (arr:any[]) => {
@@ -503,15 +503,15 @@ export default class addScoreData extends Vue {
         const idx = deduplicationRecordList[i].idx
         delete deduplicationRecordList[i].idx
         const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/playlogDetail/?idx=${idx}`)
-        const tmpEl = document.createElement('div')
-        tmpEl.innerHTML = data
-        deduplicationRecordList[i].maxCombo = Number(tmpEl.getElementsByClassName('f_r f_14 white')[0].innerText.split('/')[1])
+        const domparser = new DOMParser()
+        const tmpEl = domparser.parseFromString(data, 'text/html')
+        deduplicationRecordList[i].maxCombo = Number((tmpEl.getElementsByClassName('f_r f_14 white')[0] as HTMLElement).innerText.split('/')[1])
         const rawNotes = (tmpEl
           .getElementsByClassName('playlog_notes_detail t_r f_l f_11 f_b')[0] as HTMLElement)
           .innerText.trim()
           .split(/\t+|\n/)
           .filter(v => v !== '')
-        let notes = [[], [], [], [], []]
+        let notes: number[][] = [[], [], [], [], []]
         let cnt = 0
         let index = 0
         for (let j = 0; j < rawNotes.length; j++) {
@@ -550,35 +550,35 @@ export default class addScoreData extends Vue {
       .doc('Master')
       .get()
     if (docs && docs.exists) {
-      let tmp = docs.data()
+      let tmp: any = docs.data()
       versionMusicList = tmp.data || []
     }
     const domparser = new DOMParser()
     const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/record/musicVersion/')
     const doc = domparser.parseFromString(data, 'text/html')
     const optionCnt = doc.getElementsByClassName('w_300 m_10')[0].childElementCount
-    const sleep = msec => new Promise(resolve => setTimeout(resolve, msec))
+    const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec))
     // maimaiでらっくすのパラメータは13
     for (let i = 13; i < optionCnt; i++) {
       const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicVersion/search/?version=${i}&diff=3`)
       const tmpEl = domparser.parseFromString(data, 'text/html')
-      const version = tmpEl.getElementsByClassName('screw_block m_15 f_15')[0].innerText.replace(' ', '_')
+      const version = (tmpEl.getElementsByClassName('screw_block m_15 f_15')[0] as HTMLElement).innerText.replace(' ', '_')
       const musicElList = tmpEl.getElementsByClassName('music_master_score_back pointer w_450 m_15 p_3 f_0')
       for (let j = 0; j < musicElList.length; j++) {
-        let title = musicElList[j].getElementsByClassName('music_name_block t_l f_13 break')[0].innerText
-        const type = tmpEl.getElementsByClassName('music_kind_icon f_r')[0].src.indexOf('dx.png') >= 0 ? 'deluxe' : 'standard'
-        if (versionMusicList.find(v => v.title === title && v.type === type && v.version === version) == null) {
+        let title = (musicElList[j].getElementsByClassName('music_name_block t_l f_13 break')[0] as HTMLElement).innerText
+        const type = (tmpEl.getElementsByClassName('music_kind_icon f_r')[0] as HTMLImageElement).src.indexOf('dx.png') >= 0 ? 'deluxe' : 'standard'
+        if (versionMusicList.find((v: any) => v.title === title && v.type === type && v.version === version) == null) {
           const idx = musicElList[j].getElementsByTagName('input')[0].value
           const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicDetail/?idx=${encodeURIComponent(idx)}`)
           const tmpEl = domparser.parseFromString(data, 'text/html')
-          const splitedMusicImgUrl = tmpEl.getElementsByClassName('w_180 m_5 f_l')[0].src.split('/')
+          const splitedMusicImgUrl = (tmpEl.getElementsByClassName('w_180 m_5 f_l')[0] as HTMLImageElement).src.split('/')
           const songID = splitedMusicImgUrl[splitedMusicImgUrl.length - 1].split('.')[0]
-          const genre = tmpEl.getElementsByClassName('m_10 m_t_5 t_r f_12 blue')[0].innerText.trim()
-          if (versionMusicList.find(v => v.songID === songID && v.type === type && v.genre === genre) != null) {
+          const genre = (tmpEl.getElementsByClassName('m_10 m_t_5 t_r f_12 blue')[0] as HTMLElement).innerText.trim()
+          if (versionMusicList.find((v: any) => v.songID === songID && v.type === type && v.genre === genre) != null) {
             await sleep(500)
             continue
           }
-          const artist = tmpEl.getElementsByClassName('m_5 f_12 break')[0].innerText.trim()
+          const artist = (tmpEl.getElementsByClassName('m_5 f_12 break')[0] as HTMLElement).innerText.trim()
           versionMusicList.push({ title, version, genre, type, songID, artist })
           await sleep(500)
         }
