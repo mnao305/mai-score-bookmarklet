@@ -14,7 +14,7 @@
   </div>
 </template>
 
-<script lang="ts">
+<script lang="js">
 import { Component, Vue, Prop } from 'vue-property-decorator'
 import auth from '@/plugins/auth'
 import { db } from '@/plugins/firestore'
@@ -41,6 +41,8 @@ export default class addScoreData extends Vue {
   twitterLogin = false
   tweetStatus = ''
 
+  versionMusicList = {}
+
   async created () {
     const docs = await db
       .collection('users')
@@ -65,6 +67,7 @@ export default class addScoreData extends Vue {
     this.error = false
     this.isDisable = true
     this.message = 'データ取得準備中...'
+    await this.getFirstVersion()
     const date = Date.now()
     const difficultyLevel = ['Basic', 'Advanced', 'Expert', 'Master', 'ReMaster']
     let scoreData: any = []
@@ -192,6 +195,10 @@ export default class addScoreData extends Vue {
             musicUpdateDate = date
             updateFlg = true
           }
+
+          const tmpList = this.versionMusicList.filter(v => v.title === tmp[1] && v.type === type && v.genre === genre)
+          const version = tmpList[0].version
+
           const achievements = tmp[2] ? oldAchievement : null
           const dxScores = tmp[3] ? oldDxScore : null
           scoreData[difficultyLevel[i]][musicHash] = {
@@ -206,7 +213,8 @@ export default class addScoreData extends Vue {
             comboRank: comboRank,
             sync: sync,
             date: musicUpdateDate,
-            musicID: classList[j].getElementsByTagName('input')[0].value
+            musicID: classList[j].getElementsByTagName('input')[0].value,
+            version: version
           }
           if (updateFlg) {
             updateScoreData.push(scoreData[difficultyLevel[i]][musicHash])
@@ -225,6 +233,8 @@ export default class addScoreData extends Vue {
     }
     console.log(scoreData)
     await this.getFetchUserData(date)
+    this.message = 'プレイ履歴取得中...'
+    await this.getRecordData()
     if (updateScoreData.length <= 0) {
       this.message = '更新データはありませんでした'
       return
@@ -437,6 +447,151 @@ export default class addScoreData extends Vue {
   tweetStatusUpdate (str: string) {
     console.log(str)
     this.tweetStatus = str
+  }
+  async getRecordData () {
+    let gotOldChartData:any = { Basic: {}, Advanced: {}, Expert: {}, Master: {}, ReMaster: {} }
+    for (const key in gotOldChartData) {
+      const docs = await db
+        .collection('chartData')
+        .doc(key)
+        .get()
+      if (docs && docs.exists) {
+        gotOldChartData[key] = docs.data()
+      }
+    }
+    const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/record/')
+    const tmpEl = document.createElement('div')
+    tmpEl.innerHTML = data
+    const classList:any = tmpEl.getElementsByClassName('p_10 t_l f_0 v_b')
+    console.log(classList)
+    console.log(classList[0])
+    let recordList:{}[] = []
+    classList.forEach((el:any) => {
+      const splitedMusicImgUrl = el.getElementsByClassName('music_img m_5 m_r_0 f_l')[0].src.split('/')
+      const musicID = splitedMusicImgUrl[splitedMusicImgUrl.length - 1].split('.')[0]
+      const title = el.getElementsByClassName('basic_block m_5 p_5 p_l_10 f_13 break')[0].innerText
+      const tmpDifficultyLevel = el
+        .getElementsByClassName('playlog_diff v_b')[0]
+        .src.split('_')[1]
+        .split('.')[0]
+      const difficultyLevel = tmpDifficultyLevel === 'remaster' ? 'ReMaster' : tmpDifficultyLevel[0].toUpperCase() + tmpDifficultyLevel.slice(1)
+      const idx = el.getElementsByTagName('input')[0].value
+      const type = el.getElementsByClassName('playlog_music_kind_icon')[0].src.indexOf('standard.png') >= 0 ? 'standard' : 'deluxe'
+      const payload = { musicID, title, difficultyLevel, idx, type }
+      if (gotOldChartData[difficultyLevel][`${musicID}_${type}`] == null) {
+        recordList.push(payload)
+      }
+    })
+    // 重複を削除
+    let tmpList: {}[] = []
+    let deduplicationRecordList:any[] = recordList.filter((e:any) => {
+      if (!(tmpList.indexOf(`${e['musicID']}${e['difficultyLevel']}${e['type']}`) >= 0)) {
+        tmpList.push(`${e['musicID']}${e['difficultyLevel']}${e['type']}`)
+        return e
+      }
+    })
+    console.log(deduplicationRecordList)
+    let chartDataList = { Basic: {}, Advanced: {}, Expert: {}, Master: {}, ReMaster: {} }
+    try {
+      const sleep = (msec:number) => new Promise(resolve => setTimeout(resolve, msec))
+      const sum = (arr:any[]) => {
+        return arr.reduce((prev, current, i, arr) => {
+          return prev + current
+        })
+      }
+      for (let i = 0; i < deduplicationRecordList.length; i++) {
+        const idx = deduplicationRecordList[i].idx
+        delete deduplicationRecordList[i].idx
+        const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/playlogDetail/?idx=${idx}`)
+        const tmpEl = document.createElement('div')
+        tmpEl.innerHTML = data
+        deduplicationRecordList[i].maxCombo = Number(tmpEl.getElementsByClassName('f_r f_14 white')[0].innerText.split('/')[1])
+        const rawNotes = (tmpEl
+          .getElementsByClassName('playlog_notes_detail t_r f_l f_11 f_b')[0] as HTMLElement)
+          .innerText.trim()
+          .split(/\t+|\n/)
+          .filter(v => v !== '')
+        let notes = [[], [], [], [], []]
+        let cnt = 0
+        let index = 0
+        for (let j = 0; j < rawNotes.length; j++) {
+          if (rawNotes[j] === '　') {
+            notes[cnt] = [0]
+            cnt++
+          } else {
+            notes[cnt].push(Number(rawNotes[j]))
+            index++
+            if (index >= 5) {
+              cnt++
+              index = 0
+            }
+          }
+        }
+        deduplicationRecordList[i].notes = { tap: sum(notes[0]), hold: sum(notes[1]), slide: sum(notes[2]), touch: sum(notes[3]), break: sum(notes[4]) }
+        chartDataList[deduplicationRecordList[i].difficultyLevel][`${deduplicationRecordList[i].musicID}_${deduplicationRecordList[i].type}`] = deduplicationRecordList[i]
+        if (i % 10 === 0) await sleep(1000)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    for (const key in chartDataList) {
+      db.collection('chartData')
+        .doc(key)
+        .set(chartDataList[key], { merge: true })
+        .catch(e => {
+          console.error(e)
+        })
+    }
+  }
+  async getFirstVersion () {
+    let versionMusicList = []
+    const docs = await db
+      .collection('musicData')
+      .doc('Master')
+      .get()
+    if (docs && docs.exists) {
+      let tmp = docs.data()
+      versionMusicList = tmp.data || []
+    }
+    const domparser = new DOMParser()
+    const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/record/musicVersion/')
+    const doc = domparser.parseFromString(data, 'text/html')
+    const optionCnt = doc.getElementsByClassName('w_300 m_10')[0].childElementCount
+    const sleep = msec => new Promise(resolve => setTimeout(resolve, msec))
+    // maimaiでらっくすのパラメータは13
+    for (let i = 13; i < optionCnt; i++) {
+      const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicVersion/search/?version=${i}&diff=3`)
+      const tmpEl = domparser.parseFromString(data, 'text/html')
+      const version = tmpEl.getElementsByClassName('screw_block m_15 f_15')[0].innerText.replace(' ', '_')
+      const musicElList = tmpEl.getElementsByClassName('music_master_score_back pointer w_450 m_15 p_3 f_0')
+      for (let j = 0; j < musicElList.length; j++) {
+        let title = musicElList[j].getElementsByClassName('music_name_block t_l f_13 break')[0].innerText
+        const type = tmpEl.getElementsByClassName('music_kind_icon f_r')[0].src.indexOf('dx.png') >= 0 ? 'deluxe' : 'standard'
+        if (versionMusicList.find(v => v.title === title && v.type === type && v.version === version) == null) {
+          const idx = musicElList[j].getElementsByTagName('input')[0].value
+          const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicDetail/?idx=${encodeURIComponent(idx)}`)
+          const tmpEl = domparser.parseFromString(data, 'text/html')
+          const splitedMusicImgUrl = tmpEl.getElementsByClassName('w_180 m_5 f_l')[0].src.split('/')
+          const songID = splitedMusicImgUrl[splitedMusicImgUrl.length - 1].split('.')[0]
+          const genre = tmpEl.getElementsByClassName('m_10 m_t_5 t_r f_12 blue')[0].innerText.trim()
+          if (versionMusicList.find(v => v.songID === songID && v.type === type && v.genre === genre) != null) {
+            await sleep(500)
+            continue
+          }
+          const artist = tmpEl.getElementsByClassName('m_5 f_12 break')[0].innerText.trim()
+          versionMusicList.push({ title, version, genre, type, songID, artist })
+          await sleep(500)
+        }
+      }
+    }
+    console.log(versionMusicList)
+    this.versionMusicList = versionMusicList
+    db.collection('musicData')
+      .doc('Master')
+      .set({ data: versionMusicList }, { merge: true })
+      .catch(e => {
+        console.error(e)
+      })
   }
 }
 </script>
