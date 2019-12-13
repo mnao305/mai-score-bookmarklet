@@ -102,12 +102,6 @@ export default class addScoreData extends Vue {
       this.message = `${difficultyLevel[i]}データを読み込み中...`
       try {
         const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicGenre/search/?genre=99&diff=${i}`)
-        if (data.match(/ログインしてください/)) {
-          this.message = 'maimaiでらっくすNETにログインしていません。ログインしてから再度お試しください。'
-          this.error = true
-          this.isDisable = false
-          return
-        }
         const domparser = new DOMParser()
         const tmpEl = domparser.parseFromString(data, 'text/html')
         const classList = tmpEl.getElementsByClassName('main_wrapper')[0].children as any
