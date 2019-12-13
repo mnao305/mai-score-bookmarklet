@@ -67,6 +67,21 @@ export default class addScoreData extends Vue {
     this.error = false
     this.isDisable = true
     this.message = 'データ取得準備中...'
+    try {
+      const { data } = await Axios.get('https://maimaidx.jp/maimai-mobile/home/')
+      if (data.match(/ログインしてください/)) {
+        this.message = 'maimaiでらっくすNETにログインしていません。ログインしてから再度お試しください。'
+        this.error = true
+        this.isDisable = false
+        return
+      }
+    } catch (error) {
+      console.error(error)
+      this.message = '不明なエラーです。再度お試しください。'
+      this.error = true
+      this.isDisable = false
+      return
+    }
     await this.getFirstVersion()
     const date = Date.now()
     const difficultyLevel = ['Basic', 'Advanced', 'Expert', 'Master', 'ReMaster']
