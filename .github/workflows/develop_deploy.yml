@@ -27,7 +27,7 @@ jobs:
           npm install
           firebase use develop --token $FIREBASE_TOKEN
           npm run build:firebase
-          firebase deploy --token $FIREBASE_TOKEN
+          firebase deploy --token $FIREBASE_TOKEN --project develop
       - uses: 8398a7/action-slack@v1
         with:
           type: failure
