@@ -1,11 +1,24 @@
 {
-  "hosting": {
-    "site": "mai-score-bookmarklet",
-    "public": "output",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  }
+  "hosting": [
+    {
+      "target": "default",
+      "site": "mai-score-bookmarklet",
+      "public": "output",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    },
+    {
+      "target": "develop",
+      "site": "mai-score-develop-bookmarklet",
+      "public": "output",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  ]
 }

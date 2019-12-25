@@ -2,5 +2,21 @@
   "projects": {
     "default": "mai-score",
     "develop": "mai-score-develop"
+  },
+  "targets": {
+    "mai-score-develop": {
+      "hosting": {
+        "develop": [
+          "mai-score-develop-bookmarklet"
+        ]
+      }
+    },
+    "mai-score": {
+      "hosting": {
+        "default": [
+          "mai-score-bookmarklet"
+        ]
+      }
+    }
   }
 }
