@@ -584,7 +584,6 @@ export default class addScoreData extends Vue {
         }
       }
     }
-    console.log('!!')
 
     this.versionMusicList = versionMusicList
     db.collection('musicData')
