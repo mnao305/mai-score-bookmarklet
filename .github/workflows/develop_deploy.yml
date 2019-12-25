@@ -23,6 +23,7 @@ jobs:
           VUE_APP_storageBucket: ${{ secrets.DEV_STORAGE_BUCKET }}
           VUE_APP_messagingSenderId: ${{ secrets.DEV_MESSAGING_SENDER_ID }}
         run: |
+          npm install -g firebase-tools
           npm install
           npm run build:firebase
           firebase deploy --token $FIREBASE_TOKEN --project develop
