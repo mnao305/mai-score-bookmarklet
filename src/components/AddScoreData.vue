@@ -240,7 +240,6 @@ export default class addScoreData extends Vue {
         continue
       }
     }
-    console.log(scoreData)
     await this.getFetchUserData(date)
     this.message = 'プレイ履歴取得中...'
     await this.getRecordData()
@@ -351,7 +350,6 @@ export default class addScoreData extends Vue {
   }
 
   async createScoreImg (updateScoreData: any[]) {
-    console.log(updateScoreData)
     updateScoreData.reverse()
     if (updateScoreData.length >= 20) {
       updateScoreData = updateScoreData.slice(0, 20)
@@ -368,7 +366,6 @@ export default class addScoreData extends Vue {
     ctx.fillStyle = 'black'
     let i = 0
     for (const v of updateScoreData) {
-      console.log(v)
       try {
         const musicIconUrl = await firebase
           .storage()
@@ -415,7 +412,6 @@ export default class addScoreData extends Vue {
         .ref(`userData/${this.uid}/`)
         .child('updateScore.jpg')
       const data = await storageRef.putString(imgUrl, 'data_url')
-      console.log(data)
     } catch (error) {
       console.error(error)
     }
@@ -447,14 +443,12 @@ export default class addScoreData extends Vue {
       const data = await storageRef.put(musicIcon.data, {
         contentType: 'image/png'
       })
-      console.log(data)
     } catch (error) {
       console.error(error)
     }
     return musicImgUrl
   }
   tweetStatusUpdate (str: string) {
-    console.log(str)
     this.tweetStatus = str
   }
   async getRecordData () {
@@ -472,8 +466,6 @@ export default class addScoreData extends Vue {
     const domparser = new DOMParser()
     const tmpEl = domparser.parseFromString(data, 'text/html')
     const classList:any = tmpEl.getElementsByClassName('p_10 t_l f_0 v_b')
-    console.log(classList)
-    console.log(classList[0])
     let recordList:{}[] = []
     Array.prototype.forEach.call(classList, (el: any) => {
       const splitedMusicImgUrl = el.getElementsByClassName('music_img m_5 m_r_0 f_l')[0].src.split('/')
@@ -499,7 +491,6 @@ export default class addScoreData extends Vue {
         return e
       }
     })
-    console.log(deduplicationRecordList)
     let chartDataList: any = { Basic: {}, Advanced: {}, Expert: {}, Master: {}, ReMaster: {} }
     try {
       const sleep = (msec:number) => new Promise(resolve => setTimeout(resolve, msec))
@@ -593,7 +584,8 @@ export default class addScoreData extends Vue {
         }
       }
     }
-    console.log(versionMusicList)
+    console.log('!!')
+
     this.versionMusicList = versionMusicList
     db.collection('musicData')
       .doc('Master')
