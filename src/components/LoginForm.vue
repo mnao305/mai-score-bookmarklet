@@ -22,7 +22,6 @@ export default class LoginForm extends Vue {
   passwd = ''
 
   async twitterLogin () {
-    console.log('Login!!!!')
     try {
       const data = await auth.twitterLogin()
       if (!(data && data.user)) throw new Error()

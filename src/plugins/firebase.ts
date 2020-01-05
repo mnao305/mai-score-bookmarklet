@@ -5,12 +5,12 @@ import 'firebase/storage'
 
 if (!firebase.apps.length) {
   firebase.initializeApp({
-    apiKey: 'AIzaSyCQiHzheUpyavPNfQm72B0LHBHDR8cBNnk',
-    authDomain: 'mai-score.firebaseapp.com',
-    databaseURL: 'https://mai-score.firebaseio.com',
-    projectId: 'mai-score',
-    storageBucket: 'mai-score.appspot.com',
-    messagingSenderId: '256203593707'
+    apiKey: process.env.VUE_APP_apiKey,
+    authDomain: process.env.VUE_APP_authDomain,
+    databaseURL: process.env.VUE_APP_databaseURL,
+    projectId: process.env.VUE_APP_projectId,
+    storageBucket: process.env.VUE_APP_storageBucket,
+    messagingSenderId: process.env.VUE_APP_messagingSenderId
   })
 }
 
