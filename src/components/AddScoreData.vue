@@ -5,9 +5,10 @@
       <p>舞スコア データ取得ツール</p>
       <button :disabled="isDisable" :class="{ disableBtn: isDisable }" class="addDataBtn" @click="getData">舞スコアへデータ登録</button>
       <p v-if="message" :class="{ error: error }">{{ message }}</p>
+      <p v-if="publicData && twitterLogin && !imageGenerationSuccessFlag">スコア更新画像の生成に失敗しました</p>
       <div v-if="message === 'データ保存完了！'" class="tweetLink">
         <p v-if="publicData"><a :href="tweetURL" target="_blank">スコア更新ツイート</a></p>
-        <p v-if="publicData && twitterLogin"><TweetsWithImages @tweetStatusUpdate="tweetStatusUpdate" /></p>
+        <p v-if="publicData && twitterLogin && imageGenerationSuccessFlag"><TweetsWithImages @tweetStatusUpdate="tweetStatusUpdate" /></p>
       </div>
       <p v-if="tweetStatus">{{ tweetStatus }}</p>
     </div>
@@ -43,6 +44,9 @@ export default class addScoreData extends Vue {
 
   versionMusicList: any = {}
 
+  isDXScoreNotOnTheTweetImg = false
+  imageGenerationSuccessFlag = true
+
   async created () {
     const docs = await db
       .collection('users')
@@ -61,6 +65,7 @@ export default class addScoreData extends Vue {
     this.twitterLogin = data.providerData.some((v:any) => {
       return v.providerId === 'twitter.com'
     })
+    this.isDXScoreNotOnTheTweetImg = data.isDXScoreNotOnTheTweetImg != null ? data.isDXScoreNotOnTheTweetImg : false
   }
 
   async getData () {
@@ -351,8 +356,14 @@ export default class addScoreData extends Vue {
 
   async createScoreImg (updateScoreData: any[]) {
     updateScoreData.reverse()
+    if (this.isDXScoreNotOnTheTweetImg) {
+      updateScoreData = this.excludeDXScoreOnlyUpdates(updateScoreData)
+    }
     if (updateScoreData.length >= 20) {
       updateScoreData = updateScoreData.slice(0, 20)
+    } else if (updateScoreData.length === 0) {
+      this.imageGenerationSuccessFlag = false
+      return
     }
     let canvas = document.createElement('canvas')
     const height = 75 * updateScoreData.length
@@ -414,6 +425,7 @@ export default class addScoreData extends Vue {
       const data = await storageRef.putString(imgUrl, 'data_url')
     } catch (error) {
       console.error(error)
+      this.imageGenerationSuccessFlag = false
     }
     function loadImage (src: string) {
       return new Promise((resolve, reject) => {
@@ -427,6 +439,15 @@ export default class addScoreData extends Vue {
         img.src = src
       })
     }
+  }
+  excludeDXScoreOnlyUpdates (scoreData: any[]) {
+    let excludedScoreData = []
+    for (let i = 0; i < scoreData.length; i++) {
+      if (scoreData[i].achievements.length < 2 || scoreData[i].achievements.slice(-1)[0].achievement - scoreData[i].achievements.slice(-2)[0].achievement) {
+        excludedScoreData.push(scoreData[i])
+      }
+    }
+    return excludedScoreData
   }
   async saveMusicIcon (musicID: string) {
     const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicDetail/?idx=${encodeURIComponent(musicID)}`)
