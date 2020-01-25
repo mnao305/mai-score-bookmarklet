@@ -268,10 +268,7 @@ export default class addScoreData extends Vue {
     await this.getFetchUserData(date)
     this.message = 'プレイ履歴取得中...'
     await this.getRecordData()
-    if (updateScoreData.length <= 0) {
-      this.message = '更新データはありませんでした'
-      return
-    }
+
     this.message = 'データ保存中...'
     try {
       for (let i = 0; i < difficultyLevel.length; i++) {
@@ -292,6 +289,10 @@ export default class addScoreData extends Vue {
         .update({
           _updateAt: date
         })
+      if (updateScoreData.length <= 0) {
+        this.message = '更新データはありませんでした'
+        return
+      }
       await this.getTweetURL()
       await this.createScoreImg(updateScoreData)
       this.message = 'データ保存完了！'
