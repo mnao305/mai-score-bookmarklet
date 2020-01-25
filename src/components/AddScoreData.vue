@@ -608,8 +608,8 @@ export default class addScoreData extends Vue {
     const doc = domparser.parseFromString(data, 'text/html')
     const optionCnt = doc.getElementsByClassName('w_300 m_10')[0].childElementCount
     const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec))
-    // maimaiでらっくすのパラメータは13
-    for (let i = 0; i < optionCnt; i++) {
+    // maimaiでらっくすプラスのパラメータは14
+    for (let i = 14; i < optionCnt; i++) {
       const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicVersion/search/?version=${i}&diff=3`)
       const tmpEl = domparser.parseFromString(data, 'text/html')
       const version = (tmpEl.getElementsByClassName('screw_block m_15 f_15')[0] as HTMLElement).innerText.replace(' ', '_')
