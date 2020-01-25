@@ -47,6 +47,8 @@ export default class addScoreData extends Vue {
   isDXScoreNotOnTheTweetImg = false
   imageGenerationSuccessFlag = true
 
+  userData:any = null
+
   async created () {
     const docs = await db
       .collection('users')
@@ -62,6 +64,7 @@ export default class addScoreData extends Vue {
       this.twitterLogin = false
       return
     }
+    this.userData = data
     this.twitterLogin = data.providerData.some((v:any) => {
       return v.providerId === 'twitter.com'
     })
@@ -104,6 +107,22 @@ export default class addScoreData extends Vue {
         gotOldScore = docs.data()
       }
       scoreData[difficultyLevel[i]] = {}
+
+      if (gotOldScore && (this.userData.saveDataVersion == null || (this.userData.saveDataVersion && this.userData.saveDataVersion < 1))) {
+        let gotOldScoreArray = Object.values(gotOldScore)
+        for (let j = 0; j < gotOldScoreArray.length; j++) {
+          if (gotOldScoreArray[j].version == null) {
+            break
+          }
+          let tmpData = this.versionMusicList.filter(
+            (v:any) => v.title === gotOldScoreArray[j].title && v.type === gotOldScoreArray[j].type && gotOldScoreArray[j].version === v.version
+          )[0]
+          scoreData[difficultyLevel[i]][`${tmpData.songID}_${tmpData.type}_${difficultyLevel[i]}`] = gotOldScoreArray[j]
+        }
+      } else if (gotOldScore && (this.userData.saveDataVersion && this.userData.saveDataVersion >= 1)) {
+        scoreData[difficultyLevel[i]] = gotOldScore
+      }
+
       this.message = `${difficultyLevel[i]}データを読み込み中...`
       try {
         const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicGenre/search/?genre=99&diff=${i}`)
@@ -122,13 +141,9 @@ export default class addScoreData extends Vue {
             .trim()
             .split('\n')
             .map((v:any) => v.trim())
+            .filter((v: any) => v !== '')
 
           const type = classList[j].lastElementChild.src.indexOf('standard.png') >= 0 ? 'standard' : 'deluxe'
-
-          // 曲名などからハッシュ値を取って、DBの保存時に使う。
-          const shaObj = new JsSHA('SHA-1', 'TEXT')
-          shaObj.update(`${tmp[1]}_${difficultyLevel[i]}_${type}_${genre}`)
-          const musicHash = shaObj.getHash('HEX')
 
           const imgList = classList[j].getElementsByClassName('h_30 f_r') as HTMLCollectionOf<HTMLImageElement>
           let rank = null
@@ -181,41 +196,46 @@ export default class addScoreData extends Vue {
               sync = 'FDX+'
             }
           }
+
+          const tmpList = this.versionMusicList.filter((v:any) => v.title === tmp[1] && v.type === type && v.genre === genre)
+          const version = tmpList[0].version
+          const songID = tmpList[0].songID
+
           let musicUpdateDate
           let oldAchievement = []
           let oldDxScore = []
-          if (gotOldScore && gotOldScore[musicHash]) {
-            oldAchievement = gotOldScore[musicHash].achievements || []
-            oldDxScore = gotOldScore[musicHash].dxScores || []
-            musicUpdateDate = gotOldScore[musicHash].date || date
+          if (scoreData[difficultyLevel[i]] && scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`]) {
+            oldAchievement = scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`].achievements || []
+            oldDxScore = scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`].dxScores || []
+            musicUpdateDate = scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`].date || date
           } else {
             musicUpdateDate = date
           }
-          // 互換性保持のためしばらくおいておく。しばらくしたら削除する↓
-          if (gotOldScore && gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`]) {
-            oldAchievement = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].achievements || []
-            oldDxScore = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].dxScores || []
-            musicUpdateDate = gotOldScore[`${tmp[1]}_${difficultyLevel[i]}_${type}`].date || date
-          }
 
           let updateFlg = false
+          const dxScore = tmp[3]
+            ? Number(
+              tmp[3]
+                .split('/')[0]
+                .trim()
+                .replace(',', '')
+            )
+            : null
           if (
             (oldAchievement.length >= 1 && oldAchievement[oldAchievement.length - 1].achievement !== Number(tmp[2].replace('%', ''))) ||
               (oldAchievement.length === 0 && tmp[2]) ||
-              ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].dxScore !== Number(tmp[3].replace(',', ''))) || (oldDxScore.length === 0 && tmp[3]))
+              ((oldDxScore.length >= 1 && oldDxScore[oldDxScore.length - 1].dxScore !== dxScore) || (oldDxScore.length === 0 && dxScore))
           ) {
             oldAchievement.push({ achievement: Number(tmp[2].replace('%', '')), date: date })
-            oldDxScore.push({ dxScore: Number(tmp[3].replace(',', '')), date: date })
+            oldDxScore.push({ dxScore: dxScore, date: date })
             musicUpdateDate = date
             updateFlg = true
           }
 
-          const tmpList = this.versionMusicList.filter((v:any) => v.title === tmp[1] && v.type === type && v.genre === genre)
-          const version = tmpList[0].version
-
           const achievements = tmp[2] ? oldAchievement : null
-          const dxScores = tmp[3] ? oldDxScore : null
-          scoreData[difficultyLevel[i]][musicHash] = {
+          const dxScores = achievements ? oldDxScore : null
+          scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`] = {
+            songID: songID,
             title: tmp[1],
             achievements: achievements,
             dxScores: dxScores,
@@ -231,7 +251,7 @@ export default class addScoreData extends Vue {
             version: version
           }
           if (updateFlg) {
-            updateScoreData.push(scoreData[difficultyLevel[i]][musicHash])
+            updateScoreData.push(scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`])
           }
         }
       } catch (error) {
@@ -248,31 +268,41 @@ export default class addScoreData extends Vue {
     await this.getFetchUserData(date)
     this.message = 'プレイ履歴取得中...'
     await this.getRecordData()
-    if (updateScoreData.length <= 0) {
-      this.message = '更新データはありませんでした'
-      return
-    }
+
     this.message = 'データ保存中...'
-    for (let i = 0; i < difficultyLevel.length; i++) {
-      db.collection('users')
+    try {
+      for (let i = 0; i < difficultyLevel.length; i++) {
+        db.collection('users')
+          .doc(this.uid)
+          .collection('scores')
+          .doc(difficultyLevel[i])
+          .set(scoreData[difficultyLevel[i]])
+          .catch(e => {
+            console.error(e)
+          })
+      }
+      await db
+        .collection('users')
         .doc(this.uid)
-        .collection('scores')
-        .doc(difficultyLevel[i])
-        .set(scoreData[difficultyLevel[i]])
-        .catch(e => {
-          console.error(e)
+        .collection('secure')
+        .doc(this.uid)
+        .update({
+          _updateAt: date,
+          saveDataVersion: 1
         })
+      if (updateScoreData.length <= 0) {
+        this.message = '更新データはありませんでした'
+        return
+      }
+      await this.getTweetURL()
+      await this.createScoreImg(updateScoreData)
+      this.message = 'データ保存完了！'
+    } catch (error) {
+      console.error(error)
+      this.message = 'データの保存に失敗しました'
+      this.error = true
+      this.isDisable = false
     }
-    await db.collection('users')
-      .doc(this.uid)
-      .collection('secure')
-      .doc(this.uid)
-      .update({
-        _updateAt: date
-      })
-    await this.getTweetURL()
-    await this.createScoreImg(updateScoreData)
-    this.message = 'データ保存完了！'
   }
 
   async getFetchUserData (date: number) {
@@ -397,6 +427,7 @@ export default class addScoreData extends Vue {
       ctx.fillText(`[${v.difficultyLevel.slice(0, 3)}|${type}] ${v.title}`, 80, 30 * (i * 2 + 1) + 15 * i)
       let text
       let dxText
+
       if (v.achievements.length >= 2) {
         text = `${v.achievements.slice(-2)[0].achievement}%→${v.achievements.slice(-1)[0].achievement}%  +${(
           v.achievements.slice(-1)[0].achievement - v.achievements.slice(-2)[0].achievement
@@ -579,8 +610,8 @@ export default class addScoreData extends Vue {
     const doc = domparser.parseFromString(data, 'text/html')
     const optionCnt = doc.getElementsByClassName('w_300 m_10')[0].childElementCount
     const sleep = (msec: number) => new Promise(resolve => setTimeout(resolve, msec))
-    // maimaiでらっくすのパラメータは13
-    for (let i = 13; i < optionCnt; i++) {
+    // maimaiでらっくすプラスのパラメータは14
+    for (let i = 14; i < optionCnt; i++) {
       const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicVersion/search/?version=${i}&diff=3`)
       const tmpEl = domparser.parseFromString(data, 'text/html')
       const version = (tmpEl.getElementsByClassName('screw_block m_15 f_15')[0] as HTMLElement).innerText.replace(' ', '_')
