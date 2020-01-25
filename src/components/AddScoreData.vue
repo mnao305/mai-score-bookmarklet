@@ -233,7 +233,7 @@ export default class addScoreData extends Vue {
           }
 
           const achievements = tmp[2] ? oldAchievement : null
-          const dxScores = dxScore ? oldDxScore : null
+          const dxScores = achievements ? oldDxScore : null
           scoreData[difficultyLevel[i]][`${songID}_${type}_${difficultyLevel[i]}`] = {
             songID: songID,
             title: tmp[1],
@@ -427,7 +427,6 @@ export default class addScoreData extends Vue {
       ctx.fillText(`[${v.difficultyLevel.slice(0, 3)}|${type}] ${v.title}`, 80, 30 * (i * 2 + 1) + 15 * i)
       let text
       let dxText
-      console.log(v)
 
       if (v.achievements.length >= 2) {
         text = `${v.achievements.slice(-2)[0].achievement}%→${v.achievements.slice(-1)[0].achievement}%  +${(
