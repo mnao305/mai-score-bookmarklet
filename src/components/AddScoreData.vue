@@ -287,7 +287,8 @@ export default class addScoreData extends Vue {
         .collection('secure')
         .doc(this.uid)
         .update({
-          _updateAt: date
+          _updateAt: date,
+          saveDataVersion: 1
         })
       if (updateScoreData.length <= 0) {
         this.message = '更新データはありませんでした'
