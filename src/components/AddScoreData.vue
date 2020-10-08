@@ -414,7 +414,7 @@ export default class addScoreData extends Vue {
         const musicIconUrl = await firebase
           .storage()
           .ref()
-          .child(`musicIcon/${encodeURIComponent(v.title)}.png`)
+          .child(`musicIcon/${encodeURIComponent(v.musicID)}.png`)
           .getDownloadURL()
         await loadImage(musicIconUrl)
       } catch (error) {
@@ -494,7 +494,7 @@ export default class addScoreData extends Vue {
       const storageRef = firebase
         .storage()
         .ref('musicIcon/')
-        .child(`${encodeURIComponent(title)}.png`)
+        .child(`${encodeURIComponent(musicID)}.png`)
       const data = await storageRef.put(musicIcon.data, {
         contentType: 'image/png'
       })
