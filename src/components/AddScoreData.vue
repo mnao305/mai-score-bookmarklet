@@ -414,12 +414,12 @@ export default class addScoreData extends Vue {
         const musicIconUrl = await firebase
           .storage()
           .ref()
-          .child(`musicIcon/${encodeURIComponent(v.musicID)}.png`)
+          .child(`musicIcon/${encodeURIComponent(v.songID)}.png`)
           .getDownloadURL()
         await loadImage(musicIconUrl)
       } catch (error) {
         if (error.code === 'storage/object-not-found') {
-          const musicIconUrl = await this.saveMusicIcon(v.musicID)
+          const musicIconUrl = await this.saveMusicIcon(v.musicID, v.songID)
           await loadImage(musicIconUrl)
         } else {
           console.error(error)
@@ -483,18 +483,14 @@ export default class addScoreData extends Vue {
     }
     return excludedScoreData
   }
-  async saveMusicIcon (musicID: string) {
-    const { data } = await Axios.get(`https://maimaidx.jp/maimai-mobile/record/musicDetail/?idx=${encodeURIComponent(musicID)}`)
-    const domparser = new DOMParser()
-    const tmpEl = domparser.parseFromString(data, 'text/html')
-    const title = (tmpEl.getElementsByClassName('m_5 f_15 break')[0] as HTMLElement).innerText
-    const musicImgUrl = (tmpEl.getElementsByClassName('w_180 m_5 f_l')[0] as HTMLImageElement).src
+  async saveMusicIcon (musicID: string, songID: string) {
+    const musicImgUrl = `https://maimaidx.jp/maimai-mobile/img/Music/${songID}.png`
     const musicIcon = await Axios.get(musicImgUrl, { responseType: 'arraybuffer' })
     try {
       const storageRef = firebase
         .storage()
         .ref('musicIcon/')
-        .child(`${encodeURIComponent(musicID)}.png`)
+        .child(`${encodeURIComponent(songID)}.png`)
       const data = await storageRef.put(musicIcon.data, {
         contentType: 'image/png'
       })
