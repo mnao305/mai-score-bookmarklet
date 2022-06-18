@@ -137,11 +137,12 @@ export default class addScoreData extends Vue {
           } else if (classList[j].className.indexOf('w_450') === -1) {
             continue
           }
-          const tmp = classList[j].innerText
-            .trim()
-            .split('\n')
-            .map((v:any) => v.trim())
-            .filter((v: any) => v !== '')
+          // 暫定対処。未来の自分がなんとかしてくれるだろう。
+          const level = classList[j].getElementsByClassName('music_lv_block f_r t_c f_14')[0].innerText
+          const title = classList[j].getElementsByClassName('music_name_block t_l f_13 break')[0].innerText
+          const archive = classList[j].getElementsByClassName('music_score_block w_120 t_r f_l f_12')[0]?.innerText
+          const dx = classList[j].getElementsByClassName('music_score_block w_180 t_r f_l f_12')[0]?.innerText
+          const tmp = [level, title, archive, dx]
 
           const type = classList[j].lastElementChild.src.indexOf('standard.png') >= 0 ? 'standard' : 'deluxe'
 
@@ -319,7 +320,7 @@ export default class addScoreData extends Vue {
         this.error = true
         this.isDisable = false
       }
-      const gotRating = (element.getElementsByClassName('rating_block f_11')[0] as HTMLElement).innerText
+      const gotRating = (element.getElementsByClassName('rating_block')[0] as HTMLElement).innerText
       // const gotMaxRating = Number((element.getElementsByClassName('p_r_5 f_11')[0] as HTMLElement).innerText.split('：')[1])
       const gotPlayCount = Number(
         (element
@@ -327,7 +328,7 @@ export default class addScoreData extends Vue {
           .innerText.split('：')[1]
           .split('回')[0]
       )
-      const gotUserName = (element.getElementsByClassName('name_block f_l f_14')[0] as HTMLElement).innerText.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s: string) => {
+      const gotUserName = (element.getElementsByClassName('name_block f_l f_16')[0] as HTMLElement).innerText.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s: string) => {
         return String.fromCharCode(s.charCodeAt(0) - 65248)
       })
       const docs = await db
