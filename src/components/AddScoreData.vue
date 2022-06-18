@@ -203,6 +203,10 @@ export default class addScoreData extends Vue {
           }
 
           const tmpList = this.versionMusicList.filter((v:any) => v.title === tmp[1] && v.type === type && v.genre === genre)
+          if (tmpList.length === 0) {
+            console.error('楽曲データが見つかりません。この曲の登録をスキップします：', tmp[1])
+            continue
+          }
           const version = tmpList[0].version
           const songID = tmpList[0].songID
 
